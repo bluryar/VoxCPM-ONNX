@@ -11,3 +11,6 @@ wheels/
 
 models/
 outputs/
+*.db
+*.wav
+*.mp3
