@@ -1,0 +1,37 @@
+[project]
+name = "voxcpm-onnx"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "torch==2.9.0",
+    "torchaudio==2.9.0",
+    "transformers>=4.36.2",
+    "einops",
+    "gradio",
+    "inflect",
+    "addict",
+    "wetext",
+    "modelscope>=1.22.0",
+    "datasets>=3,<4",
+    "huggingface-hub",
+    "pydantic",
+    "tqdm",
+    "simplejson",
+    "sortedcontainers",
+    "soundfile",
+    "funasr",
+    "spaces",
+    "onnx",
+    "onnxscript>=0.5.4",
+    "pytest>=8.4.2",
+    "torchcodec>=0.8.0",
+    "onnxslim>=0.1.71",
+    "uvicorn>=0.38.0",
+    "protobuf==3.20.3",
+    "eager>=0.0.1",
+    "onnxruntime-gpu==1.23.2",
+    "fastapi>=0.115.0",
+    "ffmpeg-python>=0.2.0",
+]

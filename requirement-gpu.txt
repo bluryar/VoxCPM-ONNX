@@ -1,0 +1,13 @@
+# Minimal runtime deps for GPU service (no torch)
+fastapi>=0.115.0
+uvicorn>=0.38.0
+numpy>=1.24.0
+onnxruntime-gpu==1.23.2
+soundfile>=0.12.1
+ffmpeg-python>=0.2.0
+transformers>=4.36.2
+pydantic>=2.6.0
+protobuf==3.20.3
+onnx>=1.15.0
+tqdm>=4.66.0
+python-multipart>=0.0.6

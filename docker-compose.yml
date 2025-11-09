@@ -1,0 +1,58 @@
+services:
+  # voxcpm-cpu:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   image: voxcpm-onnx:cpu
+  #   container_name: voxcpm-cpu
+  #   environment:
+  #     - VOX_OUTPUT_DIR=/app/outputs
+  #     - VOX_SQLITE_PATH=/app/ref_feats.db
+  #     - VOX_DEVICE=cpu
+  #     - VOX_DEVICE_ID=0
+  #     - VOX_MODELS_DIR=/app/onnx_models
+  #     - VOX_TOKENIZER_DIR=/app/onnx_models
+  #     - PYTHONPATH=/app/src
+  #     # 设置为 true 可保留生成的音频文件，默认 false（生成后删除）
+  #     - VOX_KEEP_AUDIO_FILES=true
+  #   volumes:
+  #     - ./outputs:/app/outputs
+  #     - ./ref_feats.db:/app/ref_feats.db
+  #     - ./models/onnx_models_quantized:/app/onnx_models
+  #     - ./requirement.txt:/app/requirement.txt:ro
+  #   ports:
+  #     - "8100:8000"
+  #   restart: unless-stopped
+
+  voxcpm-gpu:
+    build:
+      context: .
+      dockerfile: Dockerfile.gpu
+    image: voxcpm-onnx:gpu
+    container_name: voxcpm-gpu
+    runtime: nvidia
+    environment:
+      - VOX_OUTPUT_DIR=/app/outputs
+      - VOX_SQLITE_PATH=/app/ref_feats.db
+      - VOX_DEVICE=cuda
+      - VOX_DEVICE_ID=0
+      - VOX_MODELS_DIR=/app/onnx_models
+      - VOX_TOKENIZER_DIR=/app/onnx_models
+      - PYTHONPATH=/app/src
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      # 设置为 true 可保留生成的音频文件，默认 false（生成后删除）
+      - VOX_KEEP_AUDIO_FILES=false
+    volumes:
+      - ./outputs:/app/outputs
+      - ./ref_feats.db:/app/ref_feats.db
+      - ./models/onnx_models_quantized:/app/onnx_models
+      - ./requirement-gpu.txt:/app/requirement-gpu.txt:ro
+    ports:
+      - "8101:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    restart: unless-stopped
