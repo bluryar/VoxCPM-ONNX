@@ -19,15 +19,10 @@ def WNConvTranspose1d(*args, **kwargs):
 class CausalConv1d(nn.Conv1d):
     def __init__(self, *args, padding: int = 0, **kwargs):
         super().__init__(*args, **kwargs)
-        # 保持原始参数名称用于兼容性
         self.__padding = padding
 
     def forward(self, x):
-        # 使用与原始代码相同的F.pad，但采用更安全的参数传递方式
-        if self.__padding > 0:
-            x_pad = F.pad(x, (self.__padding * 2, 0))
-        else:
-            x_pad = x
+        x_pad = F.pad(x, (self.__padding * 2, 0))
         return super().forward(x_pad)
 
 
@@ -38,12 +33,7 @@ class CausalTransposeConv1d(nn.ConvTranspose1d):
         self.__output_padding = output_padding
 
     def forward(self, x):
-        output = super().forward(x)
-        # 保持原始裁剪逻辑
-        trim_amount = self.__padding * 2 - self.__output_padding
-        if trim_amount > 0:
-            return output[..., :-trim_amount]
-        return output
+        return super().forward(x)[..., : -(self.__padding * 2 - self.__output_padding)]
 
 
 def WNCausalConv1d(*args, **kwargs):
@@ -54,7 +44,8 @@ def WNCausalTransposeConv1d(*args, **kwargs):
     return weight_norm(CausalTransposeConv1d(*args, **kwargs))
 
 
-# 保持原始snake实现但移除torch.jit.script装饰器
+# Scripting this brings model speed up 1.4x
+@torch.jit.script
 def snake(x, alpha):
     shape = x.shape
     x = x.reshape(shape[0], shape[1], -1)
@@ -100,10 +91,7 @@ class CausalResidualUnit(nn.Module):
     def forward(self, x):
         y = self.block(x)
         pad = (x.shape[-1] - y.shape[-1]) // 2
-        # 保持原始断言检查
-        if pad != 0:
-            # 在生产环境中可以移除断言，但在调试时保留
-            pass
+        assert pad == 0
         if pad > 0:
             x = x[..., pad:-pad]
         return x + y
@@ -155,7 +143,7 @@ class CausalEncoder(nn.Module):
         self.fc_mu = WNCausalConv1d(d_model, latent_dim, kernel_size=3, padding=1)
         self.fc_logvar = WNCausalConv1d(d_model, latent_dim, kernel_size=3, padding=1)
 
-        # Wrap block into nn.Sequential
+        # Wrap black into nn.Sequential
         self.block = nn.Sequential(*self.block)
         self.enc_dim = d_model
 
@@ -279,6 +267,10 @@ class CausalDecoder(nn.Module):
 
 
 class AudioVAE(nn.Module):
+    """
+    Args:
+    """
+
     def __init__(
         self,
         encoder_dim: int = 128,
@@ -297,13 +289,14 @@ class AudioVAE(nn.Module):
         self.decoder_dim = decoder_dim
         self.decoder_rates = decoder_rates
         self.depthwise = depthwise
+
         self.use_noise_block = use_noise_block
 
         if latent_dim is None:
             latent_dim = encoder_dim * (2 ** len(encoder_rates))
 
         self.latent_dim = latent_dim
-        self.hop_length = int(np.prod(encoder_rates))
+        self.hop_length = np.prod(encoder_rates)
         self.encoder = CausalEncoder(
             encoder_dim,
             latent_dim,
@@ -321,27 +314,44 @@ class AudioVAE(nn.Module):
         self.sample_rate = sample_rate
         self.chunk_size = math.prod(encoder_rates)
 
-    def preprocess(self, audio_data, sample_rate: int):
+    def preprocess(self, audio_data, sample_rate):
         if sample_rate is None:
             sample_rate = self.sample_rate
         assert sample_rate == self.sample_rate
         pad_to = self.hop_length
         length = audio_data.shape[-1]
-        # 使用裁剪而非 ceil 填充，避免在导出时产生不必要的形状约束
-        # 目标长度为不超过当前长度的 hop_length 的最大整数倍
-        target_length = (length // pad_to) * pad_to
-        # 当 length < pad_to 时，上面的结果为 0；导出脚本会设置最小输入长度为 hop_length，
-        # 因此这里不做额外的填充以保持符号形状算子简单。
-        if target_length > 0:
-            audio_data = audio_data[..., :target_length]
+        right_pad = math.ceil(length / pad_to) * pad_to - length
+        audio_data = nn.functional.pad(audio_data, (0, right_pad))
+
         return audio_data
 
     def decode(self, z: torch.Tensor):
-        """Decode given latent codes and return audio data"""
+        """Decode given latent codes and return audio data
+
+        Parameters
+        ----------
+        z : Tensor[B x D x T]
+            Quantized continuous representation of input
+        length : int, optional
+            Number of samples in output audio, by default None
+
+        Returns
+        -------
+        dict
+            A dictionary with the following keys:
+            "audio" : Tensor[B x 1 x length]
+                Decoded audio data.
+        """
         return self.decoder(z)
 
     def encode(self, audio_data: torch.Tensor, sample_rate: int):
-        """Encode audio data to latent representation"""
+        """
+        Args:
+            audio_data: Tensor[B x 1 x T]
+            sample_rate: int
+        Returns:
+            z: Tensor[B x D x T]
+        """
         if audio_data.ndim == 2:
             audio_data = audio_data.unsqueeze(1)
 

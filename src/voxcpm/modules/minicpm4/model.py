@@ -195,7 +195,6 @@ class MiniCPMAttention(nn.Module):
         self,
         hidden_states: torch.Tensor,
         position_emb: Tuple[torch.Tensor, torch.Tensor],
-        position_id: torch.Tensor,
         past_keys: torch.Tensor,
         past_values: torch.Tensor,
         attn_mask: torch.Tensor,
@@ -315,7 +314,6 @@ class MiniCPMDecoderLayer(nn.Module):
         self,
         hidden_states: torch.Tensor,
         position_emb: Tuple[torch.Tensor, torch.Tensor],
-        position_id: torch.Tensor,
         past_keys: torch.Tensor,
         past_values: torch.Tensor,
         attn_mask: torch.Tensor,
@@ -326,7 +324,6 @@ class MiniCPMDecoderLayer(nn.Module):
         hidden_states, next_keys, next_values = self.self_attn.forward_step(
             hidden_states=hidden_states,
             position_emb=position_emb,
-            position_id=position_id,
             past_keys=past_keys,
             past_values=past_values,
             attn_mask=attn_mask,
@@ -449,7 +446,6 @@ class MiniCPMModel(nn.Module):
             hidden_states, layer_next_keys, layer_next_values = decoder_layer.forward_step(
                 hidden_states,
                 position_emb,
-                position_id,
                 layer_past_keys,
                 layer_past_values,
                 attn_mask,

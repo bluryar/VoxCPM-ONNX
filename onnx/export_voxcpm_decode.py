@@ -168,10 +168,12 @@ def export_voxcpm_decode(
     """Export VoxCPMDecode single-step to ONNX with fixed timesteps wrapper and dynamic cfg_value."""
     logger.info("Exporting VoxCPM Decode step...")
 
-    # Ensure wrapper runs in float32 on CPU for portability
-    model = model.to(torch.float32)
+    # Ensure wrapper runs in float32, use GPU if available for better performance
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(torch.float32).to(device)
     model.eval()
-    model = model.cpu()
+    
+    logger.info(f"Using device: {device}")
 
     set_seed(42)
 
@@ -180,13 +182,14 @@ def export_voxcpm_decode(
     wrapper = VoxCPMDecodeFixedTimestepsWrapper(decode, timesteps=timesteps)
     wrapper.eval()
 
-    # Create dummy inputs (timesteps fixed within wrapper; cfg_value is dynamic input)
+    # Create dummy inputs on the same device as model (timesteps fixed within wrapper; cfg_value is dynamic input)
     dummy_inputs = create_dummy_inputs_decode(
         model,
         batch_size=1 if fix_batch1 else batch_size,
         past_seq_length=past_seq_length,
         cfg_value=cfg_value,
     )
+    dummy_inputs = tuple(inp.to(device) for inp in dummy_inputs)
     # dynamo.explain 需要按位置参数解包
     # 打印解释结果
     # print("Torch Dynamo Explanation:")

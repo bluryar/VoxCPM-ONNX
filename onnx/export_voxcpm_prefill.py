@@ -87,10 +87,12 @@ def export_voxcpm_prefill(
     """Export VoxCPMPrefill to ONNX."""
     logger.info("Exporting VoxCPM Prefill stage...")
 
-    # Ensure wrapper runs in float32 on CPU for portability
-    model = model.to(torch.float32)
+    # Ensure wrapper runs in float32, use GPU if available for better performance
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(torch.float32).to(device)
     model.eval()
-    model = model.cpu()
+    
+    logger.info(f"Using device: {device}")
 
     set_seed(42)
 
@@ -98,9 +100,10 @@ def export_voxcpm_prefill(
     wrapper = VoxCPMPrefill(model)
     wrapper.eval()
 
-    # Create dummy inputs
+    # Create dummy inputs on the same device as model
     dummy_batch_size = 1 if fix_batch1 else batch_size
     dummy_inputs = create_dummy_inputs_prefill(model, batch_size=dummy_batch_size, seq_length=seq_length)
+    dummy_inputs = tuple(inp.to(device) for inp in dummy_inputs)
 
     # Define dynamic dimensions
     dim_seq_length = Dim("seq_length", min=2, max=model.config.max_length)

@@ -19,8 +19,8 @@
 set -euxo pipefail
 
 # --- 1. 配置区域 ---
-INPUT_DIR="./onnx_models"
-BASE_OUTPUT_DIR="./onnx_models_processed"
+INPUT_DIR="./models/onnx_models"
+BASE_OUTPUT_DIR="./models/onnx_models_processed"
 MODELS=(
     "audio_vae_decoder.onnx"
     "audio_vae_encoder.onnx"

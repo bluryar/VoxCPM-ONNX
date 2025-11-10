@@ -26,8 +26,8 @@
 set -euxo pipefail
 
 # --- 参数配置（可用环境变量覆盖） ---
-MODEL_PATH=${MODEL_PATH:-./VoxCPM-0.5B}
-OUTPUT_DIR=${OUTPUT_DIR:-./onnx_models}
+MODEL_PATH=${MODEL_PATH:-./models/VoxCPM-0.5B}
+OUTPUT_DIR=${OUTPUT_DIR:-./models/onnx_models}
 OPSET_VERSION=${OPSET_VERSION:-20}
 
 # AudioVAE
@@ -55,7 +55,6 @@ python onnx/export_audio_vae_encoder.py \
   --model_path "${MODEL_PATH}" \
   --output_dir "${OUTPUT_DIR}" \
   --audio_length "${AUDIO_LENGTH}" \
-  --fix_batch1 --batch_size 1 \
   --validate --num_tests "${NUM_TESTS}" --rtol "${RTOL}" --atol "${ATOL}" --opset_version "${OPSET_VERSION}"
 
 # --- 2) 导出 AudioVAE Decoder ---
@@ -65,7 +64,6 @@ python onnx/export_audio_vae_decoder.py \
   --output_dir "${OUTPUT_DIR}" \
   --latent_length "${LATENT_LENGTH}" \
   --latent_dim "${LATENT_DIM}" \
-  --fix_batch1 --batch_size 1 \
   --validate --num_tests "${NUM_TESTS}" --rtol "${RTOL}" --atol "${ATOL}" --opset_version "${OPSET_VERSION}"
 
 # --- 3) 导出 VoxCPM Prefill ---
@@ -73,7 +71,6 @@ echo "[Step 3/4] 导出 voxcpm_prefill.onnx"
 python onnx/export_voxcpm_prefill.py \
   --model_path "${MODEL_PATH}" \
   --output_dir "${OUTPUT_DIR}" \
-  --fix_batch1 --batch_size 1 \
   --validate --num_tests "${NUM_TESTS}" --rtol "${RTOL}" --atol "${ATOL}" --opset_version "${OPSET_VERSION}"
 
 # --- 4) 导出 VoxCPM Decode Step ---
@@ -83,10 +80,9 @@ python onnx/export_voxcpm_decode.py \
   --output_dir "${OUTPUT_DIR}" \
   --timesteps "${TIMESTEPS}" \
   --cfg_value "${CFG_VALUE}" \
-  --fix_batch1 --batch_size 1 \
   --validate --num_tests "${NUM_TESTS}" --rtol "${RTOL}" --atol "${ATOL}" --opset_version "${OPSET_VERSION}"
 
 echo "拷贝配置文件到输出目录..."
-cp "${MODEL_PATH}/*.json" "${OUTPUT_DIR}"
+cp "${MODEL_PATH}/tokenizer.json" "${OUTPUT_DIR}"
 
 echo "[Done] 导出已全部完成。最终优化模型位于 onnx_models/"

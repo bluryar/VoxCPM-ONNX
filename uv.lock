@@ -1004,6 +1004,21 @@ wheels = [
 ]
 
 [[package]]
+name = "gguf"
+version = "0.17.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.3.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "pyyaml" },
+    { name = "tqdm" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/08/08/7de1ca4b71e7bf33b547f82bb22505e221b5fa42f67d635e200e0ad22ad6/gguf-0.17.1.tar.gz", hash = "sha256:36ad71aad900a3e75fc94ebe96ea6029f03a4e44be7627ef7ad3d03e8c7bcb53", size = 89338, upload-time = "2025-06-19T14:00:33.705Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fc/31/6a93a887617ee7deeaa602ca3d02d1c12a6cb8a742a695de5d128f5fa46a/gguf-0.17.1-py3-none-any.whl", hash = "sha256:7bc5aa7eeb1931f7d39b48fdc5b38fda6b294b9dca75cf607ac69557840a3943", size = 96224, upload-time = "2025-06-19T14:00:32.88Z" },
+]
+
+[[package]]
 name = "gradio"
 version = "5.49.1"
 source = { registry = "https://pypi.org/simple" }
@@ -4140,6 +4155,7 @@ dependencies = [
     { name = "fastapi" },
     { name = "ffmpeg-python" },
     { name = "funasr" },
+    { name = "gguf" },
     { name = "gradio" },
     { name = "huggingface-hub" },
     { name = "inflect" },
@@ -4173,12 +4189,13 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "ffmpeg-python", specifier = ">=0.2.0" },
     { name = "funasr" },
+    { name = "gguf", specifier = ">=0.17.1" },
     { name = "gradio" },
     { name = "huggingface-hub" },
     { name = "inflect" },
     { name = "modelscope", specifier = ">=1.22.0" },
     { name = "onnx" },
-    { name = "onnxruntime-gpu", specifier = ">=1.23.2" },
+    { name = "onnxruntime-gpu", specifier = "==1.23.2" },
     { name = "onnxscript", specifier = ">=0.5.4" },
     { name = "onnxslim", specifier = ">=0.1.71" },
     { name = "protobuf", specifier = "==3.20.3" },
