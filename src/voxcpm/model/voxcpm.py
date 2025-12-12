@@ -30,7 +30,7 @@ from pydantic import BaseModel
 from tqdm import tqdm
 from transformers import LlamaTokenizerFast
 
-from ..modules.audiovae import AudioVAE
+from ..modules.audiovae import AudioVAE, AudioVAEConfig
 from ..modules.layers import ScalarQuantizationLayer
 from ..modules.locdit import CfmConfig, UnifiedCFM, VoxCPMLocDiT
 from ..modules.locenc import VoxCPMLocEnc
@@ -74,10 +74,12 @@ class VoxCPMConfig(BaseModel):
 
     encoder_config: VoxCPMEncoderConfig
     dit_config: VoxCPMDitConfig
+    audio_vae_config: dict = None
 
     max_length: int = 4096
     device: str = "cuda"
     dtype: str = "bfloat16"
+    dit_mean_mode: bool = False
     
 
 class VoxCPMModel(nn.Module):
@@ -658,8 +660,20 @@ class VoxCPMModel(nn.Module):
         config.device = device
 
         tokenizer = LlamaTokenizerFast.from_pretrained(path)
+        
+        # Handle AudioVAE config which might be missing in older config files
+        if hasattr(config, "audio_vae_config") and config.audio_vae_config is not None:
+            # If it's a dict, convert to AudioVAEConfig
+            if isinstance(config.audio_vae_config, dict):
+                audio_vae_config = AudioVAEConfig(**config.audio_vae_config)
+            else:
+                # Assuming it's already an AudioVAEConfig object or compatible
+                audio_vae_config = config.audio_vae_config
+        else:
+            # Fallback for 0.5B model (default parameters)
+            audio_vae_config = AudioVAEConfig()
 
-        audio_vae = AudioVAE()
+        audio_vae = AudioVAE(config=audio_vae_config)
         vae_state_dict = torch.load(
             os.path.join(path, "audiovae.pth"),
             map_location="cpu",
@@ -671,11 +685,31 @@ class VoxCPMModel(nn.Module):
         model = model.to(lm_dtype)
         model.audio_vae = model.audio_vae.to(torch.float32)
 
-        model_state_dict = torch.load(
-            os.path.join(path, "pytorch_model.bin"),
-            map_location="cpu",
-            weights_only=True,
-        )["state_dict"]
+        # Try to load from safetensors first, fallback to pytorch_model.bin
+        safetensors_path = os.path.join(path, "model.safetensors")
+        pytorch_model_path = os.path.join(path, "pytorch_model.bin")
+
+        try:
+            from safetensors.torch import load_file
+            SAFETENSORS_AVAILABLE = True
+        except ImportError:
+            SAFETENSORS_AVAILABLE = False
+
+        if os.path.exists(safetensors_path) and SAFETENSORS_AVAILABLE:
+            print(f"Loading model from safetensors: {safetensors_path}")
+            model_state_dict = load_file(safetensors_path)
+        elif os.path.exists(pytorch_model_path):
+            print(f"Loading model from pytorch_model.bin: {pytorch_model_path}")
+            checkpoint = torch.load(
+                pytorch_model_path,
+                map_location="cpu",
+                weights_only=True,
+            )
+            model_state_dict = checkpoint.get("state_dict", checkpoint)
+        else:
+            raise FileNotFoundError(
+                f"Model file not found. Expected either {safetensors_path} or {pytorch_model_path}"
+            )
 
         for kw, val in vae_state_dict.items():
             model_state_dict[f"audio_vae.{kw}"] = val

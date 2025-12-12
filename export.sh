@@ -26,7 +26,7 @@
 set -euxo pipefail
 
 # --- 参数配置（可用环境变量覆盖） ---
-MODEL_PATH=${MODEL_PATH:-./models/VoxCPM-0.5B}
+MODEL_PATH=${MODEL_PATH:-./models/VoxCPM1.5}
 OUTPUT_DIR=${OUTPUT_DIR:-./models/onnx_models}
 OPSET_VERSION=${OPSET_VERSION:-20}
 
