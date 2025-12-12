@@ -125,11 +125,11 @@ def cmd_clone(args):
     )
     
     # Save audio
-    sf.write(str(output_path), audio_array, 16000)
+    sf.write(str(output_path), audio_array, model.tts_model.sample_rate)
     print(f"Saved audio to: {output_path}")
     
     # Stats
-    duration = len(audio_array) / 16000
+    duration = len(audio_array) / model.tts_model.sample_rate
     print(f"Duration: {duration:.2f}s")
 
 
@@ -157,11 +157,11 @@ def cmd_synthesize(args):
     )
     
     # Save audio
-    sf.write(str(output_path), audio_array, 16000)
+    sf.write(str(output_path), audio_array, model.tts_model.sample_rate)
     print(f"Saved audio to: {output_path}")
     
     # Stats
-    duration = len(audio_array) / 16000
+    duration = len(audio_array) / model.tts_model.sample_rate
     print(f"Duration: {duration:.2f}s")
 
 
@@ -203,9 +203,9 @@ def cmd_batch(args):
                 denoise=args.denoise and prompt_audio_path is not None
             )
             output_file = output_dir / f"output_{i:03d}.wav"
-            sf.write(str(output_file), audio_array, 16000)
+            sf.write(str(output_file), audio_array, model.tts_model.sample_rate)
             
-            duration = len(audio_array) / 16000
+            duration = len(audio_array) / model.tts_model.sample_rate
             print(f"  Saved: {output_file} ({duration:.2f}s)")
             success_count += 1
             

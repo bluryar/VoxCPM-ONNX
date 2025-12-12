@@ -3,7 +3,7 @@ import time
 import numpy as np
 import onnxruntime as ort
 
-from .constants import AUDIO_START_TOKEN
+from .constants import AUDIO_START_TOKEN, LATENT_DIM
 from .audio import read_audio_mono
 from .vae import encode_audio_to_patches
 
@@ -25,7 +25,7 @@ def build_inputs(tokenizer,
         print(f"分词耗时: {tok_dt:.3f}s，token数: {text_token.shape[0]}")
         text_token = np.concatenate([text_token, np.array([AUDIO_START_TOKEN], dtype=np.int64)], axis=-1)
         text_length = text_token.shape[0]
-        audio_feat = np.zeros((text_length, patch_size, 64), dtype=inference_dtype)
+        audio_feat = np.zeros((text_length, patch_size, LATENT_DIM), dtype=inference_dtype)
         text_mask = np.ones(text_length, dtype=np.int32)
         audio_mask = np.zeros(text_length, dtype=np.int32)
     else:
@@ -47,7 +47,7 @@ def build_inputs(tokenizer,
         audio_length = patches.shape[0]
         text_pad = np.zeros(audio_length, dtype=np.int64)
         text_token = np.concatenate([text_token, text_pad])
-        audio_pad = np.zeros((text_length, patch_size, 64), dtype=inference_dtype)
+        audio_pad = np.zeros((text_length, patch_size, LATENT_DIM), dtype=inference_dtype)
         audio_feat = np.concatenate([audio_pad, patches], axis=0)
         text_mask = np.concatenate([np.ones(text_length), np.zeros(audio_length)]).astype(np.int32)
         audio_mask = np.concatenate([np.zeros(text_length), np.ones(audio_length)]).astype(np.int32)
@@ -78,7 +78,7 @@ def build_inputs_with_patches(tokenizer,
     audio_length = patches.shape[0]
     text_pad = np.zeros(audio_length, dtype=np.int64)
     text_token = np.concatenate([text_token, text_pad])
-    audio_pad = np.zeros((text_length, patch_size, 64), dtype=inference_dtype)
+    audio_pad = np.zeros((text_length, patch_size, LATENT_DIM), dtype=inference_dtype)
     audio_feat = np.concatenate([audio_pad, patches.astype(inference_dtype)], axis=0)
     text_mask = np.concatenate([np.ones(text_length), np.zeros(audio_length)]).astype(np.int32)
     audio_mask = np.concatenate([np.zeros(text_length), np.ones(audio_length)]).astype(np.int32)

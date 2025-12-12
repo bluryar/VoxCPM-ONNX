@@ -368,7 +368,9 @@ class VoxCPMModel(nn.Module):
         patch_len = self.patch_size * self.chunk_size
 
         if audio.size(1) % patch_len != 0:
-            audio = torch.nn.functional.pad(audio, (0, patch_len - audio.size(1) % patch_len))
+            # 左填充：在音频开头填充，保持有效音频数据在序列末尾
+            padding_size = patch_len - audio.size(1) % patch_len
+            audio = torch.nn.functional.pad(audio, (padding_size, 0))
 
         # extract audio features
         audio_feat = self.audio_vae.encode(audio.to(self.device), self.sample_rate).cpu()
@@ -378,7 +380,6 @@ class VoxCPMModel(nn.Module):
             -1,
             self.patch_size,
         ).permute(1, 2, 0) # (D, T, P)
-        audio_feat = audio_feat[:-1, ...] # trick: remove the last padding token
         # build prompt cache
         prompt_cache = {
             "text_token": text_token,
@@ -512,7 +513,7 @@ class VoxCPMModel(nn.Module):
                 audio_feat,
                 audio_mask,
                 min_len=min_len,
-                max_len=int(target_text_length * retry_badcase_ratio_threshold + 10) if retry_badcase else max_len,
+                max_len=min(int(target_text_length * retry_badcase_ratio_threshold + 10), max_len), # avoid too long audio,
                 inference_timesteps=inference_timesteps,
                 cfg_value=cfg_value,
                 streaming=streaming,
@@ -590,6 +591,11 @@ class VoxCPMModel(nn.Module):
                 - Predicted audio feature sequence so far as a List if ``streaming=True``, else as a concatenated Tensor
         """
         B, T, P, D = feat.shape
+
+        print("shape of text: ", text.shape)
+        print("shape of text_mask: ", text_mask.shape)
+        print("shape of feat: ", feat.shape)
+        print("shape of feat_mask: ", feat_mask.shape)
 
         (
             dit_hidden,

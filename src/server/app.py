@@ -14,7 +14,7 @@ from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Response
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from onnx_infer.constants import SAMPLE_RATE, MAX_THREADS
+from onnx_infer.constants import SAMPLE_RATE, MAX_THREADS, PATCH_SIZE
 from onnx_infer.runtime import (
     create_session_options,
     create_run_options,
@@ -60,12 +60,13 @@ class TTSState:
         self.provider_options = None
         self.session_opts = None
         self.run_opts = None
-        self.patch_size = 2
+        self.patch_size = PATCH_SIZE
         self.device_type = 'cpu'
         self.device_id = 0
         self.models_dir = None
         self.tokenizer_dir = None
         self.sqlite_path: Optional[str] = None
+        self.sample_rate = 16000
 
     def init(self, models_dir: str, tokenizer_dir: str, device: str, device_id: int, optimize: bool, max_threads: int, dtype: str, sqlite_path: str):
         if self.initialized:
@@ -82,20 +83,28 @@ class TTSState:
         self.vae_enc_sess = create_session(os.path.join(models_dir, "audio_vae_encoder.onnx"), self.session_opts, self.providers, self.provider_options)
         self.vae_dec_sess = create_session(os.path.join(models_dir, "audio_vae_decoder.onnx"), self.session_opts, self.providers, self.provider_options)
 
-        try:
-            with open(os.path.join(models_dir, "config.json"), "r") as f:
-                cfg = json.load(f)
-                self.patch_size = int(cfg.get("patch_size", 2))
-        except Exception:
-            self.patch_size = 2
+        print(f"VoxCPM ONNX TTS Service models_dir: {models_dir} ||| {os.path.join(models_dir, 'config.json')}")
+        
+        # Reload config from the specific models_dir to ensure correct patch_size
+        from onnx_infer.config import get_config
+        cfg = get_config(models_dir)
+        self.patch_size = cfg.patch_size
+        
+        # Update global constants if needed (though they are loaded at module level, 
+        # for multiple instances this might be tricky, but here we assume single model dir per process mostly)
+        # Better: use cfg.sample_rate in logic instead of global constant
+        self.sample_rate = cfg.sample_rate
 
         self.device_type, self.device_id = get_device_info_from_providers(self.providers, device_id)
         self.initialized = True
+        print(f"Initialized VoxCPM ONNX TTS Service state: {self}")
+        print(f"Initialized VoxCPM ONNX TTS Service patch_size: {self.patch_size}")
+        print(f"Initialized VoxCPM ONNX TTS Service sample_rate: {self.sample_rate}")
 
 
 state = TTSState()
 
-DEFAULT_MODELS_DIR = os.environ.get("VOX_MODELS_DIR", "/root/code/VoxCPM/onnx_models")
+DEFAULT_MODELS_DIR = os.environ.get("VOX_MODELS_DIR", "./models/onnx_models")
 DEFAULT_TOKENIZER_DIR = os.environ.get("VOX_TOKENIZER_DIR", DEFAULT_MODELS_DIR)
 DEFAULT_DEVICE = os.environ.get("VOX_DEVICE", "cuda")
 DEFAULT_DEVICE_ID = int(os.environ.get("VOX_DEVICE_ID", "0"))
@@ -168,9 +177,9 @@ async def ref_feat(
         audio, sr = sf.read(tmp_audio, always_2d=False)
         if audio.ndim == 2:
             audio = audio.mean(axis=1)
-        if sr != SAMPLE_RATE:
+        if sr != state.sample_rate:
             from onnx_infer.audio import resample_audio_linear
-            audio = resample_audio_linear(audio, sr, SAMPLE_RATE)
+            audio = resample_audio_linear(audio, sr, state.sample_rate)
         patches = encode_audio_to_patches(
             state.vae_enc_sess,
             audio,
@@ -285,7 +294,7 @@ async def _tts_core(
     output_dir.mkdir(parents=True, exist_ok=True)
     wav_path = output_dir / f"voxcpm_{int(time.time()*1000)}.wav"
     print(f"写入 {wav_path}")
-    sf.write(wav_path, audio, SAMPLE_RATE, format="WAV")
+    sf.write(wav_path, audio, state.sample_rate, format="WAV")
 
     fmt = response_format.lower()
     if fmt not in {"mp3", "opus", "aac", "flac", "wav", "pcm"}:
@@ -300,7 +309,7 @@ async def _tts_core(
             try:
                 stream = ffmpeg.input(str(wav_path))
                 if fmt == "pcm":
-                    stream = ffmpeg.output(stream, str(converted_path), acodec="pcm_s16le", ac=1, ar=str(SAMPLE_RATE))
+                    stream = ffmpeg.output(stream, str(converted_path), acodec="pcm_s16le", ac=1, ar=str(state.sample_rate))
                 else:
                     acodec_map = {"mp3": "libmp3lame", "opus": "libopus", "aac": "aac", "flac": "flac"}
                     stream = ffmpeg.output(stream, str(converted_path), acodec=acodec_map[fmt])

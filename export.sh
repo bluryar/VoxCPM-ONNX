@@ -31,7 +31,7 @@ OUTPUT_DIR=${OUTPUT_DIR:-./models/onnx_models}
 OPSET_VERSION=${OPSET_VERSION:-20}
 
 # AudioVAE
-AUDIO_LENGTH=${AUDIO_LENGTH:-16000}
+AUDIO_LENGTH=${AUDIO_LENGTH:-70560}
 LATENT_LENGTH=${LATENT_LENGTH:-100}
 LATENT_DIM=${LATENT_DIM:-64}
 
@@ -84,5 +84,6 @@ python onnx/export_voxcpm_decode.py \
 
 echo "拷贝配置文件到输出目录..."
 cp "${MODEL_PATH}/tokenizer.json" "${OUTPUT_DIR}"
+cp "${MODEL_PATH}/config.json" "${OUTPUT_DIR}"
 
 echo "[Done] 导出已全部完成。最终优化模型位于 onnx_models/"

@@ -149,7 +149,7 @@ def main():
     parser.add_argument(
         "--audio_length",
         type=int,
-        default=16000,
+        default=70560,
         help="Dummy input audio length in samples",
     )
     parser.add_argument(
