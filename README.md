@@ -1,10 +1,13 @@
 # VoxCPM ONNX
 
 <p align="center">
-  ... | <a href="https://modelscope.cn/models/bluryar/voxcpm-onnx"><img src="https://modelscope.cn/models/modelscope/logos/resolve/master/badge.svg" width="24" /> ModelScope </a>  | ...
-</p>)
+<a href="https://modelscope.cn/models/bluryar/voxcpm-onnx"><img src="https://modelscope.cn/models/modelscope/logos/resolve/master/badge.svg" width="24" /> ModelScope </a>
+</p>
 
 VoxCPM ONNX 是对 [OpenBMB/VoxCPM](https://github.com/OpenBMB/VoxCPM) 开源模型的 ONNX 导出与推理扩展项目。支持将 VoxCPM 文本转语音模型导出为 ONNX 格式并提供高效的推理服务，支持 CPU 和 GPU 部署，提供 REST API 接口。
+
+!!! 注意：当前推理代码存在问题，待修复
+!!! 正在计划重写推理代码以支持并发推理。
 
 > ⚠️ **重要声明**
 > 1. 本项目代码与本文档完全由生成式AI驱动生成！
