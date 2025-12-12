@@ -6,7 +6,7 @@
 
 VoxCPM ONNX 是对 [OpenBMB/VoxCPM](https://github.com/OpenBMB/VoxCPM) 开源模型的 ONNX 导出与推理扩展项目。支持将 VoxCPM 文本转语音模型导出为 ONNX 格式并提供高效的推理服务，支持 CPU 和 GPU 部署，提供 REST API 接口。
 
-!!! 注意：当前推理代码存在问题，待修复
+!!! 注意：当前推理代码存在问题，待修复。暂时需要切换到 ff62e719e8d3a8e7537d817c5f9c0c45efcd42ed 这个commit使用。
 !!! 正在计划重写推理代码以支持并发推理。
 
 > ⚠️ **重要声明**
