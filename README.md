@@ -2,9 +2,11 @@
 
 <p align="center">
   ... | <a href="https://modelscope.cn/models/bluryar/voxcpm-onnx"><img src="https://modelscope.cn/models/modelscope/logos/resolve/master/badge.svg" width="24" /> ModelScope </a>  | ...
-</p>)
+</p
 
 > https://github.com/DakeQQ/Text-to-Speech-TTS-ONNX/blob/main/VoxCPM/Export_VoxCPM_ONNX.py - DakeQQ 的版本支持 1.5 的模型转换哦，建议使用他的模型让AI写一份HTTP服务，Salute👍❤️
+
+> **UPUDATE:** 正在开发 VoxCPM.cpp，目前在 ggml 的 python bindings 下跑通非流式合成了，因此这个 onnx 项目的更新还是得推迟，考虑到 DakeQQ 的版本内存占用更低，更对接大家使用它的版本哦
 
 VoxCPM ONNX 是对 [OpenBMB/VoxCPM](https://github.com/OpenBMB/VoxCPM) 开源模型的 ONNX 导出与推理扩展项目。支持将 VoxCPM 文本转语音模型导出为 ONNX 格式并提供高效的推理服务，支持 CPU 和 GPU 部署，提供 REST API 接口。
 
