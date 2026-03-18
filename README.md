@@ -11,6 +11,7 @@
 > 2026-03-10 15:58:15
 > 
 > **UPUDATE:** 正在开发 VoxCPM.cpp，目前在 ggml 的 python bindings 下跑通非流式合成了，因此这个 onnx 项目的更新还是得推迟，考虑到 DakeQQ 的版本内存占用更低，更对接大家使用它的版本哦
+> 
 > 2026-03-18 11:43:48
 > **UPUDATE:** 欢迎试用：https://github.com/bluryar/VoxCPM.cpp 
 
